@@ -1,0 +1,52 @@
+version: '2'
+services:
+
+  # The Application
+  app:
+    container_name: my_app
+    build:
+      context: ./
+      dockerfile: docker/app.dockerfile
+    working_dir: /var/www
+    volumes:
+      - ./src:/var/www
+    environment:
+      - "DB_PORT=3306"
+      - "DB_HOST=mydatabase"
+
+  # The Web Server
+  web:
+    container_name: my_web
+    build:
+      context: ./
+      dockerfile: docker/web.dockerfile
+    working_dir: /var/www
+    volumes_from:
+      - app
+    ports:
+      - 8080:80
+
+  # The Database
+  mydatabase:
+    container_name: my_mysql
+    image: mysql:latest
+    environment:
+      - "MYSQL_DATABASE=my_database"
+      - "MYSQL_USER=myuser"
+      - "MYSQL_PASSWORD=pass"
+      - "MYSQL_ROOT_PASSWORD=123456"
+    ports:
+        - "3307:3306"
+    restart: always
+    #command: mysqld --sql_mode="STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"
+    volumes:
+      - mydbdata-vol:/var/lib/mysql
+
+volumes:
+  mydbdata-vol:
+
+# Auto import datbase dump during container run
+#- ./data-dump.sql:/docker-entrypoint-initdb.d/data-dump.sql
+# Import databse command
+# docker exec -i my_mysql /usr/bin/mysql -u root --password=123456 my_database < dump.sql
+# docker exec -it my_mysql /usr/bin/mysql -u root --password=123456 my_database
